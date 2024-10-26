@@ -1,21 +1,48 @@
-import express, { json } from "express";
+import express, { json, Request } from "express";
 import { v4 } from 'uuid'
 
 const app = express();
 const port = 3000;
 
-app.use(json())  
+app.use(json())
 
-const pessoas = [];
+interface IPessoas {
+  id?: string
+  nome: string
+  idade: number
+  altura: number
+  temPet: string[]
+}
+
+const pessoas: IPessoas[] = [];
 
 // CRUD -> CREATE (post) READ (get) UPDATE (put ou patch) DELETE (delete)
 
+function validaPessoa(pessoa?: IPessoas, index?: number) {
+  if (!pessoa || index == -1) {
+    return "Pessoa não encontrada"
+  }
+
+  return pessoa
+}
+
 // raiz
+// endpoints de api - rotas de api
 app.get("/", (request, response) => {
-  response.json('Opaaaa');
+  response.json(pessoas);
 });
 
-app.post("/add-pessoa", (req, res) => {
+app.get("/pessoa-id/:id", (req, res) => {
+  const id = req.params.id
+
+  const pessoa = pessoas.find(item => item.id === id)
+
+  const pessoaValidada = validaPessoa(pessoa)
+
+  res.json(pessoaValidada)
+})
+
+app.post("/add-pessoa", (req: Request<any, any, Omit<IPessoas, 'id'>>, res) => {
   const body = req.body
 
   pessoas.push({
@@ -27,15 +54,14 @@ app.post("/add-pessoa", (req, res) => {
 })
 
 // req params = parametro enviado pelo client
-app.put("/att-pessoa/:id", (req, res) => {
+app.put("/att-pessoa/:id", (req: Request<any, any, Omit<IPessoas, 'id'>>, res) => {
   const id = req.params.id
   const body = req.body
 
   const pessoa = pessoas.find((pessoa) => pessoa.id === id)
   const index = pessoas.findIndex((pessoa) => pessoa.id === id)
 
-  console.log('pessoa', pessoa)
-  console.log('body', body)
+  validaPessoa(pessoa, index)
 
   const novaPessoa = {
     ...pessoa,
@@ -43,6 +69,7 @@ app.put("/att-pessoa/:id", (req, res) => {
   }
 
   pessoas.splice(index, 1, novaPessoa)
+
   res.json(pessoas)
 })
 
@@ -50,6 +77,8 @@ app.delete('/delete-pessoa/:id', (req, res) => {
   const id = req.params.id
 
   const index = pessoas.findIndex((pessoa) => pessoa.id === id)
+
+  validaPessoa(undefined, index)
 
   pessoas.splice(index, 1)
 
